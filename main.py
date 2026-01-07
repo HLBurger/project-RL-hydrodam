@@ -1,4 +1,5 @@
 from TestEnv import HydroElectric_Test
+from policies import hourly_policy, weekday_policy, time_policy
 import argparse
 import matplotlib.pyplot as plt
 
@@ -13,7 +14,16 @@ cumulative_reward = []
 observation = env.observation()
 for i in range(730*24 -1): # Loop through 2 years -> 730 days * 24 hours
     # Choose a random action between -1 (full capacity sell) and 1 (full capacity pump)
-    action = env.continuous_action_space.sample()
+    #action = env.continuous_action_space.sample()
+    
+    # Uncomment for using hourly-based policy:
+    #action = hourly_policy(observation)
+
+    # Uncomment for using weekday-based policy:
+    #action = weekday_policy(observation)
+
+    # Uncomment for using combined time-based policy:
+    action = time_policy(observation)
     # Or choose an action based on the observation using your RL agent!:
     # action = RL_agent.act(observation)
     # The observation is the tuple: [volume, price, hour_of_day, day_of_week, day_of_year, month_of_year, year]
@@ -30,7 +40,3 @@ for i in range(730*24 -1): # Loop through 2 years -> 730 days * 24 hours
         plt.plot(cumulative_reward)
         plt.xlabel('Time (Hours)')
         plt.show()
-
-
-
-

@@ -1,4 +1,4 @@
-import gym
+import gymnasium as gym
 import numpy as np
 import pandas as pd
 
@@ -31,6 +31,7 @@ class HydroElectric_Test(gym.Env):
 
     def step(self, action):
         action = np.squeeze(action) # Remove the extra dimension
+        reward = 0
         # Calculate the costs and volume change when pumping water (action >0)
         if (action >0) and (self.volume <= self.max_volume):
             if (self.volume + action*self.max_flow) > self.max_volume:
