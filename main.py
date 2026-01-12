@@ -10,9 +10,11 @@ args = parser.parse_args()
 env = HydroElectric_Test(path_to_test_data=args.excel_file)
 total_reward = []
 cumulative_reward = []
+water_level = []
 
 observation = env.observation()
-for i in range(730*24 -1): # Loop through 2 years -> 730 days * 24 hours
+#for i in range(730*24 -1): # Loop through 2 years -> 730 days * 24 hours
+for i in range(24*3):
     # Choose a random action between -1 (full capacity sell) and 1 (full capacity pump)
     #action = env.continuous_action_space.sample()
     
@@ -30,13 +32,22 @@ for i in range(730*24 -1): # Loop through 2 years -> 730 days * 24 hours
     next_observation, reward, terminated, truncated, info = env.step(action)
     total_reward.append(reward)
     cumulative_reward.append(sum(total_reward))
+    
+    water_level.append(observation[0])
 
     done = terminated or truncated
     observation = next_observation
 
-    if done:
-        print('Total reward: ', sum(total_reward))
-        # Plot the cumulative reward over time
-        plt.plot(cumulative_reward)
-        plt.xlabel('Time (Hours)')
-        plt.show()
+    #if done:
+print('Total reward: ', sum(total_reward))
+# Plot the cumulative reward over time
+# plt.plot(cumulative_reward)
+# plt.xlabel('Time (Hours)')
+# plt.show()
+
+plt.plot(water_level)
+plt.xlabel('Water level')
+plt.title("Waterlevel over time")
+plt.xlabel("Time")
+plt.ylabel("Water volume in m^3")
+plt.show()
