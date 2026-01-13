@@ -1,5 +1,6 @@
 from TestEnv import HydroElectric_Test
 from policies import hourly_policy, weekday_policy, time_policy
+from reward_shaping import reward_shaping
 import argparse
 import matplotlib.pyplot as plt
 
@@ -11,6 +12,7 @@ env = HydroElectric_Test(path_to_test_data=args.excel_file)
 total_reward = []
 cumulative_reward = []
 water_level = []
+action_history = []
 
 observation = env.observation()
 #for i in range(730*24 -1): # Loop through 2 years -> 730 days * 24 hours
@@ -28,8 +30,14 @@ for i in range(24*3):
     action = time_policy(observation)
     # Or choose an action based on the observation using your RL agent!:
     # action = RL_agent.act(observation)
+    
     # The observation is the tuple: [volume, price, hour_of_day, day_of_week, day_of_year, month_of_year, year]
     next_observation, reward, terminated, truncated, info = env.step(action)
+
+    # Apply adjustments to the reward
+    reward = reward_shaping(env, reward, action_history)
+
+    action_history.append(action)
     total_reward.append(reward)
     cumulative_reward.append(sum(total_reward))
     
