@@ -1,3 +1,7 @@
+import numpy as np
+import matplotlib 
+import matplotlib.pyplot as plt
+matplotlib.use("TkAgg")
 def hourly_policy(observation):
     # The observation is the tuple: [volume, price, hour_of_day, day_of_week, day_of_year, month_of_year, year]
     if (observation[2] > 8) and (observation[2] < 23):  # If hour is between 9 AM and 10 PM, sell
@@ -30,3 +34,154 @@ def time_policy(observation):
         action = 0 # No action
 
     return action
+
+# def discretize_state(obs):
+#     volume, price, hour = obs[0], obs[1], obs[2]
+
+#     volume_bin = int(volume // 10000)          # 0–10
+#     price_bin = min(int(price // 10), 19)      # 0–19
+#     hour_bin = int(hour - 1)                   # 0–23
+
+#     return volume_bin, price_bin, hour_bin
+
+
+class QAgent():
+
+    def __init__(self, env, discount_rate=0.95,
+                 volume_bins=10, price_bins=20):
+
+        self.env = env
+        self.discount_rate = discount_rate
+        self.discrete_action_space = self.env.discrete_action_space.n
+
+        # --- bins ---
+        self.volume_bins = np.linspace(0, 100000, volume_bins)
+        self.price_bins = np.linspace( 0, np.max(env.price_values), price_bins)
+        # self.hour_bins = np.arange(24)
+        self.hour_bins = np.arange(0, 24, 3)
+
+        self.bins = [self.volume_bins, self.price_bins, self.hour_bins]
+
+    def discretize_state(self, state):
+
+        volume, price, hour = state[0], state[1], state[2]
+
+        v_bin = np.digitize(volume, self.volume_bins) - 1
+        p_bin = np.digitize(price, self.price_bins) - 1
+        # h_bin = int(hour - 1)
+        h_bin = np.digitize(hour, self.hour_bins) - 1
+        h_bin = np.clip(h_bin, 0, len(self.hour_bins)-2)
+
+
+        v_bin = np.clip(v_bin, 0, len(self.volume_bins) - 2)
+        p_bin = np.clip(p_bin, 0, len(self.price_bins) - 2)
+
+        return (v_bin, p_bin, h_bin)
+
+    def create_Q_table(self):
+
+        self.Qtable = np.zeros((len(self.volume_bins) - 1,len(self.price_bins) - 1,
+            len(self.hour_bins )-1,self.discrete_action_space ),dtype=np.float32)
+
+    def train(self, simulations, learning_rate,
+              epsilon=0.1, epsilon_decay=1000,
+              adaptive_epsilon=False):
+
+        self.create_Q_table()
+        self.learning_rate = learning_rate
+
+        self.epsilon_start = 1
+        self.epsilon_end = 0.05
+        self.epsilon = epsilon
+
+        for episode in range(simulations):
+
+            state, _ = self.env.reset()
+            state = self.discretize_state(state)
+            done = False
+
+            total_rewards = 0
+
+            if adaptive_epsilon:
+                self.epsilon = np.interp(episode,[0, epsilon_decay], [self.epsilon_start, self.epsilon_end])
+
+            while not done:
+
+                if np.random.uniform(0, 1) < self.epsilon:
+                    action = self.env.discrete_action_space.sample()
+                else:
+                    action = np.argmax(self.Qtable[state])
+
+                next_state, reward, terminated, truncated, _ = self.env.step(action)
+                done = terminated or truncated
+                next_state = self.discretize_state(next_state)
+
+                v, p, h = state
+                nv, np_, nh = next_state
+
+                Q_target = reward + self.discount_rate * np.max(self.Qtable[nv, np_, nh])
+
+                delta = self.learning_rate * (Q_target - self.Qtable[v, p, h, action])
+
+                self.Qtable[v, p, h, action] = self.Qtable[v, p, h, action] + delta
+
+                state = next_state
+                total_rewards += reward
+
+            if episode % 100 == 0:
+                print(episode,reward)
+
+            # if adapting_learning_rate:
+            #     self.learning_rate = self.learning_rate/np.sqrt(i+1)
+           
+        # print("Training finished")
+
+    def play(self):
+
+        water_levels = []
+        rewards = []
+
+        state, _ = self.env.reset()
+        done = False
+        # i = 0
+
+        while not done:
+            # i += 1
+            state_d = self.discretize_state(state)
+            action = np.argmax(self.Qtable[state_d])
+            state, reward, terminated, truncated, _ = self.env.step(action)
+            done = terminated or truncated
+            water_levels.append(state[0])
+            rewards.append(reward)
+        
+            # if i >= 365:
+            #     done = True
+
+        
+        # Print totale reward
+        print("Total reward in evaluation:", sum(rewards))
+        return water_levels, rewards
+
+
+class StepWrapper:
+    def __init__(self, env, step_hours=3):
+        self.env = env
+        self.step_hours = step_hours
+
+    def reset(self):
+        return self.env.reset()
+
+    def step(self, action):
+        total_reward = 0
+        done = False
+        info = {}
+        for _ in range(self.step_hours):
+            if done:
+                break
+            obs, reward, terminated, truncated, info = self.env.step(action)
+            total_reward += reward
+            done = terminated or truncated
+        return obs, total_reward, done, done, info
+    def __getattr__(self, name):
+        # alles wat StepWrapper zelf niet heeft, vraag door aan de originele env
+        return getattr(self.env, name)
