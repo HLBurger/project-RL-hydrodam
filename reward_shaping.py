@@ -25,8 +25,11 @@ def penalty_overflow(env):
 def penalty_bursts(action_history):
     penalty = 0
 
+    if len(action_history) < 2:
+        return penalty
+    
     # Apply penalty for 3 consecutive identical actions
-    if abs(sum(action_history[-3:])) == 3:
+    if len(set(action_history[-3:])) == 1:
         penalty = -5
 
     # Apply penalty for extreme action changes
@@ -44,5 +47,12 @@ def reward_shaping(env, base_reward, action_history):
     p_bursts = penalty_bursts(action_history)
 
     shaped_reward = base_reward + p_volume + p_overflow + p_bursts
-    return shaped_reward
+    info_reward = {
+        'base_reward': base_reward,
+        'penalty_volume': p_volume,
+        'penalty_overflow': p_overflow,
+        'penalty_bursts': p_bursts,
+        'shaped_reward': shaped_reward
+    }
+    return shaped_reward, info_reward
 

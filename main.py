@@ -34,10 +34,11 @@ for i in range(24*3):
     # The observation is the tuple: [volume, price, hour_of_day, day_of_week, day_of_year, month_of_year, year]
     next_observation, reward, terminated, truncated, info = env.step(action)
 
+    action_history.append(action)
+
     # Apply adjustments to the reward
     reward = reward_shaping(env, reward, action_history)
 
-    action_history.append(action)
     total_reward.append(reward)
     cumulative_reward.append(sum(total_reward))
     
