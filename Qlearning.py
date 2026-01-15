@@ -117,7 +117,6 @@ class QAgent():
             # i += 1
             state_d = self.discretize_state(state)
             action = np.argmax(self.Qtable[state_d])
-            action -= 1
             state, reward, terminated, truncated, _ = self.env.step(action)
             done = terminated or truncated
             water_levels.append(state[0])
@@ -149,8 +148,9 @@ class StepWrapper:
         for _ in range(self.step_hours):
             if done:
                 break
+
+            action -= 1  # Convert action from {0,1,2} to {-1,0,1}
             obs, reward, terminated, truncated, info = self.env.step(action)
-            action -= 1
             self.action_history.append(action)
             reward = reward_shaping(self.env, reward, self.action_history)
             total_reward += reward
