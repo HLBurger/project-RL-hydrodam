@@ -47,12 +47,5 @@ def reward_shaping(env, base_reward, action_history):
     p_bursts = penalty_bursts(action_history)
 
     shaped_reward = base_reward + p_volume + p_overflow + p_bursts
-    info_reward = {
-        'base_reward': base_reward,
-        'penalty_volume': p_volume,
-        'penalty_overflow': p_overflow,
-        'penalty_bursts': p_bursts,
-        'shaped_reward': shaped_reward
-    }
-    return shaped_reward, info_reward
+    return shaped_reward
 
