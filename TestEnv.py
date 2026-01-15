@@ -30,8 +30,8 @@ class HydroElectric_Test(gym.Env):
         self.volume_to_MWh = (self.water_mass*self.gravity_constant*self.dam_height)*2.77778e-10  # m^3 to MWh
 
     def step(self, action):
-        #action = np.squeeze(action) # Remove the extra dimension
-        action = [-1, 0, 1][int(action)]
+        action = np.squeeze(action) # Remove the extra dimension
+        #action = [-1, 0, 1][int(action)]
         reward = 0
         # Calculate the costs and volume change when pumping water (action >0)
         if (action >0) and (self.volume <= self.max_volume):
