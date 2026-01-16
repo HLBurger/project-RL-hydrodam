@@ -39,7 +39,9 @@ def penalty_idle(action_history):
     
     # Apply penalty for each hour of idling in the last 24 hours
     idle_hours = action_history[-24:].count(0)
-    penalty = -2 * idle_hours
+    # penalty = -2 * idle_hours
+    if idle_hours >= 22:
+        penalty = -2 * idle_hours
 
     return penalty
 
@@ -62,6 +64,9 @@ def reward_shaping(env, base_reward, action_history):
     p_idle = penalty_idle(action_history)
     r_potential = reward_potential(env)
 
-    shaped_reward = base_reward + p_overflow + p_underflow + p_bursts + p_idle + r_potential
+    # shaped_reward = base_reward + p_overflow + p_underflow + p_bursts + p_idle + r_potential
+    shaped_reward = base_reward + p_overflow + p_underflow + r_potential  # +  p_idle+ p_bursts
     return shaped_reward
+
+
 
