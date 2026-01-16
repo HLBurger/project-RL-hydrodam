@@ -39,7 +39,7 @@ def penalty_idle(action_history):
     
     # Apply penalty for each hour of idling in the last 24 hours
     idle_hours = action_history[-24:].count(0)
-    penalty = -2 * idle_hours
+    penalty = -4 * idle_hours
 
     return penalty
 

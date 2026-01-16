@@ -19,6 +19,7 @@ class QAgent():
         self.env = env
         self.discount_rate = discount_rate
         self.discrete_action_space = self.env.discrete_action_space.n
+        self.action_history = []
 
         # --- bins ---
         self.volume_bins = np.linspace(0, 100000, volume_bins)
@@ -79,7 +80,9 @@ class QAgent():
                     action = np.argmax(self.Qtable[state])
 
                 next_state, reward, terminated, truncated, _ = self.env.step(action)
-
+                self.action_history.append(action)
+                reward = reward_shaping(self.env, reward, self.action_history)
+                
                 done = terminated or truncated
                 next_state = self.discretize_state(next_state)
 
@@ -117,6 +120,7 @@ class QAgent():
             # i += 1
             state_d = self.discretize_state(state)
             action = np.argmax(self.Qtable[state_d])
+            print(action)
             state, reward, terminated, truncated, _ = self.env.step(action)
             done = terminated or truncated
             water_levels.append(state[0])
@@ -136,7 +140,6 @@ class StepWrapper:
         self.env = env
         self.step_hours = step_hours
         self.action_history = []
-        self.reward_log = []
 
     def reset(self):
         return self.env.reset()
@@ -152,10 +155,10 @@ class StepWrapper:
             action -= 1  # Convert action from {0,1,2} to {-1,0,1}
             obs, reward, terminated, truncated, info = self.env.step(action)
             self.action_history.append(action)
-            reward = reward_shaping(self.env, reward, self.action_history)
             total_reward += reward
             done = terminated or truncated
         return obs, total_reward, done, done, info
+    
     def __getattr__(self, name):
         # alles wat StepWrapper zelf niet heeft, vraag door aan de originele env
         return getattr(self.env, name)
