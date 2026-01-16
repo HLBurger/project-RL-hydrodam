@@ -16,7 +16,7 @@ action_history = []
 
 observation = env.observation()
 #for i in range(730*24 -1): # Loop through 2 years -> 730 days * 24 hours
-for i in range(24*3):
+for i in range(350):
     # Choose a random action between -1 (full capacity sell) and 1 (full capacity pump)
     #action = env.continuous_action_space.sample()
     
@@ -37,7 +37,7 @@ for i in range(24*3):
     action_history.append(action)
 
     # Apply adjustments to the reward
-    reward = reward_shaping(env, reward, action_history)
+    #reward = reward_shaping(env, reward, action_history)
 
     total_reward.append(reward)
     cumulative_reward.append(sum(total_reward))

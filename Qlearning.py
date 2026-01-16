@@ -19,7 +19,6 @@ class QAgent():
         self.env = env
         self.discount_rate = discount_rate
         self.discrete_action_space = self.env.discrete_action_space.n
-        self.action_history = []
 
         # --- bins ---
         self.volume_bins = np.linspace(0, 100000, volume_bins)
@@ -28,6 +27,8 @@ class QAgent():
         self.hour_bins = np.arange(0, 24, 3)
 
         self.bins = [self.volume_bins, self.price_bins, self.hour_bins]
+
+        self.action_history = []
 
     def discretize_state(self, state):
 
@@ -68,6 +69,7 @@ class QAgent():
             done = False
 
             total_rewards = 0
+            self.action_history = []
 
             if adaptive_epsilon:
                 self.epsilon = np.interp(episode,[0, epsilon_decay], [self.epsilon_start, self.epsilon_end])
@@ -79,10 +81,10 @@ class QAgent():
                 else:
                     action = np.argmax(self.Qtable[state])
 
-                next_state, reward, terminated, truncated, _ = self.env.step(action)
-                self.action_history.append(action)
-                reward = reward_shaping(self.env, reward, self.action_history)
-                
+                env_action =  action - 1
+                next_state, base_reward, terminated, truncated, _ = self.env.step(env_action)
+                reward = reward_shaping(self.env, base_reward, self.action_history)
+                self.action_history.append(env_action)
                 done = terminated or truncated
                 next_state = self.discretize_state(next_state)
 
@@ -98,7 +100,7 @@ class QAgent():
                 state = next_state
                 total_rewards += reward
 
-            if episode % 100 == 0:
+            if episode % 20 == 0:
                 print(episode,reward)
 
             # if adapting_learning_rate:
@@ -112,7 +114,6 @@ class QAgent():
         rewards = []
 
         state, _ = self.env.reset()
-        print(state)
         done = False
         # i = 0
 
@@ -120,7 +121,7 @@ class QAgent():
             # i += 1
             state_d = self.discretize_state(state)
             action = np.argmax(self.Qtable[state_d])
-            print(action)
+            action -= 1
             state, reward, terminated, truncated, _ = self.env.step(action)
             done = terminated or truncated
             water_levels.append(state[0])
@@ -131,37 +132,40 @@ class QAgent():
 
         
         # Print totale reward
-        print("Total reward in evaluation:", sum(rewards))
+        print("Total reward in evaluation:", round(sum(rewards),2))
+        print("avg reward", round(np.mean(rewards),2))
+        print("max", max(rewards), "min",min(rewards))
         return water_levels, rewards
 
 
-class StepWrapper:
-    def __init__(self, env, step_hours=3):
-        self.env = env
-        self.step_hours = step_hours
-        self.action_history = []
+# class StepWrapper:
+#     def __init__(self, env, step_hours=3):
+#         self.env = env
+#         self.step_hours = step_hours
+#         self.action_history = []
+#         self.reward_log = []
 
-    def reset(self):
-        return self.env.reset()
+#     def reset(self):
+#         return self.env.reset()
 
-    def step(self, action):
-        total_reward = 0
-        done = False
-        info = {}
-        for _ in range(self.step_hours):
-            if done:
-                break
+#     def step(self, action):
+#         total_reward = 0
+#         done = False
+#         info = {}
+#         for _ in range(self.step_hours):
+#             if done:
+#                 break
 
-            action -= 1  # Convert action from {0,1,2} to {-1,0,1}
-            obs, reward, terminated, truncated, info = self.env.step(action)
-            self.action_history.append(action)
-            total_reward += reward
-            done = terminated or truncated
-        return obs, total_reward, done, done, info
-    
-    def __getattr__(self, name):
-        # alles wat StepWrapper zelf niet heeft, vraag door aan de originele env
-        return getattr(self.env, name)
+#             action -= 1  # Convert action from {0,1,2} to {-1,0,1}
+#             obs, reward, terminated, truncated, info = self.env.step(action)
+#             self.action_history.append(action)
+#             reward = reward_shaping(self.env, reward, self.action_history)
+#             total_reward += reward
+#             done = terminated or truncated
+#         return obs, total_reward, done, done, info
+#     def __getattr__(self, name):
+#         # alles wat StepWrapper zelf niet heeft, vraag door aan de originele env
+#         return getattr(self.env, name)
 
 
 
