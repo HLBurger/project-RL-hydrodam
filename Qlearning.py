@@ -19,6 +19,7 @@ class QAgent():
         self.env = env
         self.discount_rate = discount_rate
         self.discrete_action_space = self.env.discrete_action_space.n
+        self.learning_curve = []
 
         # --- bins ---
         self.volume_bins = np.linspace(0, 100000, volume_bins)
@@ -100,8 +101,9 @@ class QAgent():
                 state = next_state
                 total_rewards += reward
 
+            self.learning_curve.append(total_rewards)
             if episode % 20 == 0:
-                print(episode,reward)
+                print(episode,total_rewards)
 
             # if adapting_learning_rate:
             #     self.learning_rate = self.learning_rate/np.sqrt(i+1)
