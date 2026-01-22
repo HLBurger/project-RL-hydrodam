@@ -47,13 +47,7 @@ def penalty_idle(action_history):
 
 def reward_potential(env):
     dam_level = env.observation()[0]
-
-    # Reward for excess water storage  
-    potential_reward = 0
-    for level in range(int(dam_level), int(env.max_volume)+1, int(env.max_volume/10)):
-        potential_reward += 5 # Reward 5 units for each 10% of max volume above current level
-        break
-
+    potential_reward = (dam_level / env.max_volume) * 5
     return potential_reward
 
 def reward_shaping(env, base_reward, action_history):
@@ -65,7 +59,7 @@ def reward_shaping(env, base_reward, action_history):
     r_potential = reward_potential(env)
 
     # shaped_reward = base_reward + p_overflow + p_underflow + p_bursts + p_idle + r_potential
-    shaped_reward = base_reward + p_overflow + p_underflow + r_potential  # +  p_idle+ p_bursts
+    shaped_reward = base_reward + p_overflow + p_underflow + r_potential #+  p_idle + p_bursts
     return shaped_reward
 
 
