@@ -47,7 +47,7 @@ def penalty_idle(action_history):
 
 def reward_potential(env):
     dam_level = env.observation()[0]
-    potential_reward = int(dam_level / env.max_volume) * 5
+    potential_reward = (dam_level / env.max_volume) * 5
     return potential_reward
 
 def reward_shaping(env, base_reward, action_history):
