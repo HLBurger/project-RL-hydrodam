@@ -14,45 +14,68 @@ def discretize_state(obs):
 class QAgent():
 
     def __init__(self, env, discount_rate=0.95,
-                 volume_bins=10, price_bins=20):
+                 volume_bins=10, price_bins=10):
 
         self.env = env
         self.discount_rate = discount_rate
         self.discrete_action_space = self.env.discrete_action_space.n
 
+        self.state_visits = None
+
         # --- bins ---
-        self.volume_bins = np.linspace(0, 100000, volume_bins)
-        self.price_bins = np.linspace( 0, np.max(env.price_values), price_bins)
+        # self.volume_bins = np.linspace(0, 100000, volume_bins)
+        # self.price_bins = np.linspace( 0, np.max(env.price_values), price_bins)
         # self.hour_bins = np.arange(24)
+        self.volume_bins = np.array([-np.inf, 20_000, 40_000, 60_000, 70_000, np.inf]) #30_000
+        # self.price_bins = np.array([-np.inf, 20, 40, 50, 60, 80, np.inf])
+        self.price_bins = np.quantile(env.price_values, np.linspace(0, 1, 5 + 1))
         self.hour_bins = np.arange(0, 24, 1)
 
         self.bins = [self.volume_bins, self.price_bins, self.hour_bins]
 
         self.action_history = []
+        self.total_reward_history = []
 
     def discretize_state(self, state):
 
         volume, price, hour = state[0], state[1], state[2]
 
-        v_bin = np.digitize(volume, self.volume_bins) - 1
-        p_bin = np.digitize(price, self.price_bins) - 1
-        # h_bin = int(hour - 1)
-        h_bin = np.digitize(hour, self.hour_bins) - 1
-        h_bin = np.clip(h_bin, 0, len(self.hour_bins)-2)
+        # v_bin = np.digitize(volume, self.volume_bins) - 1
+        # p_bin = np.digitize(price, self.price_bins) - 1
+        # # h_bin = int(hour - 1)
+        # h_bin = np.digitize(hour, self.hour_bins) - 1
+        # h_bin = np.clip(h_bin, 0, len(self.hour_bins)-2)
 
 
-        v_bin = np.clip(v_bin, 0, len(self.volume_bins) - 2)
-        p_bin = np.clip(p_bin, 0, len(self.price_bins) - 2)
+        # v_bin = np.clip(v_bin, 0, len(self.volume_bins) - 2)
+        # p_bin = np.clip(p_bin, 0, len(self.price_bins) - 2)
+
+        # volume bins
+        v_bin = np.digitize(volume, self.volume_bins) -1
+
+        # price bins
+        p_bin = np.digitize(price, self.price_bins)-1
+
+        # hour bin (exact)
+        h_bin = np.digitize(price, self.hour_bins)-1
+
 
         return (v_bin, p_bin, h_bin)
 
     def create_Q_table(self):
 
-        self.Qtable = np.zeros((len(self.volume_bins) - 1,len(self.price_bins) - 1,
-            len(self.hour_bins )-1,self.discrete_action_space ),dtype=np.float32)
+        self.Qtable = np.zeros((len(self.volume_bins),
+                                len(self.price_bins),
+                                len(self.hour_bins),
+                                self.discrete_action_space),dtype=np.float32)
+        self.state_visits = np.zeros((
+                    len(self.volume_bins),
+                    len(self.price_bins),
+                    len(self.hour_bins)), dtype=np.int32)
+
 
     def train(self, simulations, learning_rate,
-              epsilon=0.1, epsilon_decay=1000,
+              epsilon=0.1, epsilon_decay=10000,
               adaptive_epsilon=False):
 
         self.create_Q_table()
@@ -66,6 +89,7 @@ class QAgent():
 
             state, _ = self.env.reset()
             state = self.discretize_state(state)
+            
             done = False
 
             total_rewards = 0
@@ -91,6 +115,8 @@ class QAgent():
                 v, p, h = state
                 nv, np_, nh = next_state
 
+                self.state_visits[v, p, h] += 1
+
                 Q_target = reward + self.discount_rate * np.max(self.Qtable[nv, np_, nh])
 
                 delta = self.learning_rate * (Q_target - self.Qtable[v, p, h, action])
@@ -100,8 +126,12 @@ class QAgent():
                 state = next_state
                 total_rewards += reward
 
+            self.total_reward_history.append(total_rewards)
+
             if episode % 20 == 0:
                 print(episode,reward)
+                if episode != 0:
+                    print(np.mean(self.total_reward_history[20:]),min(self.total_reward_history[20:]),max(self.total_reward_history[20:]))
 
             # if adapting_learning_rate:
             #     self.learning_rate = self.learning_rate/np.sqrt(i+1)
