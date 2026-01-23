@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from reward_shaping import reward_shaping
 import matplotlib.pyplot as plt
+import optuna 
 
 class QAgent():
 
@@ -168,6 +169,26 @@ class QAgent():
         print("avg reward", round(np.mean(rewards),2))
         print("max", max(rewards), "min",min(rewards))
         return water_levels, rewards, actions_play
+    
+    def hyperparameter_tuning(self, parameter_dict, simulations = 25):
+
+        def objective(trial):
+            learning_rate = trial.suggest_float("learning_rate", parameter_dict["learning_rate"][0], parameter_dict["learning_rate"][1], log=True)
+            epsilon = trial.suggest_float("epsilon", parameter_dict["epsilon"][0], parameter_dict["epsilon"][1], log=True)
+
+            self.train(simulations=simulations,
+                       learning_rate=learning_rate,
+                       epsilon=epsilon)
+
+            water_levels, rewards, actions_play = self.play()
+            total_reward = sum(rewards)
+            return total_reward
+
+        study = optuna.create_study(direction="maximize")
+        study.optimize(objective, n_trials=10)
+        print("Best hyperparameters: ", study.best_params)
+        self.study = study
+        return study.best_params
 
 # class StepWrapper:
 #     def __init__(self, env, step_hours=3):
