@@ -76,10 +76,11 @@ class QAgent():
 
 
     def train(self, simulations, learning_rate,
-              epsilon=0.1, epsilon_decay=10000,
-              adaptive_epsilon=False):
+              epsilon=0.1, epsilon_decay=1000,
+              adaptive_epsilon=False, adaptive_learning_rate = True):
 
         self.create_Q_table()
+        self.starting_learning_rate = learning_rate
         self.learning_rate = learning_rate
 
         self.epsilon_start = 1
@@ -128,6 +129,9 @@ class QAgent():
                 total_rewards += reward
 
             self.learning_curve.append(total_rewards)
+            if adaptive_learning_rate:
+                self.learning_rate *= 0.99
+                
             self.total_reward_history.append(total_rewards)
 
             if episode % 20 == 0:
