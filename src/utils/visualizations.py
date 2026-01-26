@@ -349,6 +349,138 @@ def plot_state_heatmap(agent, dim_x, dim_y):
     plt.tight_layout()
     plt.show()
 
+def plot_learning_curve(
+    episode_rewards: List[float],
+    window_size: int = 10,
+    title: str = "Learning Curve - Training Progress",
+    figsize: Tuple[int, int] = (14, 6)
+) -> None:
+    """
+    Plot learning curve showing episode rewards with rolling average.
+    
+    Args:
+        episode_rewards: List of total rewards per episode
+        window_size: Size of rolling average window (default: 10)
+        title: Plot title
+        figsize: Figure size as (width, height)
+    """
+    fig, ax = plt.subplots(figsize=figsize)
+    
+    episodes = np.arange(len(episode_rewards))
+    
+    # Plot raw episode rewards with transparency
+    ax.plot(episodes, episode_rewards, linewidth=1, alpha=0.3, 
+           color='#2E86AB', label='Per-Episode Reward')
+    ax.scatter(episodes, episode_rewards, s=10, alpha=0.2, color='#2E86AB')
+    
+    # Plot rolling average
+    rolling_avg = pd.Series(episode_rewards).rolling(window=window_size, center=True).mean()
+    ax.plot(episodes, rolling_avg, linewidth=2.5, color='#F77F00', 
+           label=f'Rolling Average (window={window_size})')
+    
+    # Fill between rolling avg and zero for visualization
+    ax.fill_between(episodes, rolling_avg, alpha=0.2, color='#F77F00')
+    
+    ax.set_title(title, fontsize=14, fontweight='bold')
+    ax.set_xlabel("Episode", fontsize=11)
+    ax.set_ylabel("Total Episode Reward", fontsize=11)
+    ax.legend(loc='best', fontsize=10)
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+
+def plot_learning_curve_with_phases(
+    episode_rewards: List[float],
+    window_size: int = 10,
+    title: str = "Learning Progress - Training Phases",
+    figsize: Tuple[int, int] = (16, 6)
+) -> None:
+    """
+    Plot learning curve with multiple metrics tracking training progress.
+    
+    Args:
+        episode_rewards: List of total rewards per episode
+        window_size: Size of rolling average window (default: 10)
+        title: Plot title
+        figsize: Figure size as (width, height)
+    """
+    episode_rewards = np.array(episode_rewards)
+    episodes = np.arange(len(episode_rewards))
+    
+    fig, axes = plt.subplots(2, 2, figsize=figsize)
+    
+    # 1. Raw rewards with rolling average
+    ax = axes[0, 0]
+    ax.plot(episodes, episode_rewards, linewidth=1, alpha=0.3, 
+           color='#2E86AB', label='Per-Episode')
+    rolling_avg = pd.Series(episode_rewards).rolling(window=window_size, center=True).mean()
+    ax.plot(episodes, rolling_avg, linewidth=2.5, color='#F77F00', 
+           label=f'Rolling Avg (window={window_size})')
+    ax.fill_between(episodes, rolling_avg, alpha=0.2, color='#F77F00')
+    ax.set_title("Episode Rewards", fontsize=12, fontweight='bold')
+    ax.set_ylabel("Reward", fontsize=10)
+    ax.legend(fontsize=9)
+    ax.grid(True, alpha=0.3)
+    
+    # 2. Cumulative learning progress
+    ax = axes[0, 1]
+    cumulative_rewards = np.cumsum(episode_rewards)
+    ax.plot(episodes, cumulative_rewards, linewidth=2.5, color='#06A77D')
+    ax.fill_between(episodes, cumulative_rewards, alpha=0.2, color='#06A77D')
+    ax.set_title("Cumulative Rewards", fontsize=12, fontweight='bold')
+    ax.set_ylabel("Total Cumulative Reward", fontsize=10)
+    ax.grid(True, alpha=0.3)
+    
+    # 3. Learning rate (improvement per episode)
+    ax = axes[1, 0]
+    improvement = np.diff(episode_rewards, prepend=episode_rewards[0])
+    ax.bar(episodes, improvement, color=['#06A77D' if x > 0 else '#D62828' 
+                                         for x in improvement], 
+          alpha=0.7, edgecolor='black', linewidth=0.5)
+    ax.axhline(0, color='black', linestyle='-', linewidth=0.8)
+    ax.set_title("Episode-to-Episode Improvement", fontsize=12, fontweight='bold')
+    ax.set_xlabel("Episode", fontsize=10)
+    ax.set_ylabel("Reward Change", fontsize=10)
+    ax.grid(True, alpha=0.3, axis='y')
+    
+    # 4. Learning metrics summary
+    ax = axes[1, 1]
+    ax.axis('off')
+    
+    # Calculate metrics
+    total_episodes = len(episode_rewards)
+    best_episode = np.argmax(episode_rewards)
+    best_reward = episode_rewards[best_episode]
+    avg_reward = np.mean(episode_rewards)
+    final_avg = np.mean(episode_rewards[-window_size:])
+    improvement_pct = ((final_avg - avg_reward) / abs(avg_reward) * 100) if avg_reward != 0 else 0
+    
+    metrics_text = f"""
+LEARNING PROGRESS SUMMARY
+
+Episodes:
+  Total: {total_episodes}
+  Best Episode: #{best_episode + 1}
+
+Rewards:
+  Best: {best_reward:.2f}
+  Average: {avg_reward:.2f}
+  Final Avg: {final_avg:.2f}
+  Improvement: {improvement_pct:+.1f}%
+
+Training Status:
+  {"✓ Learning" if final_avg > avg_reward else "✗ Struggling"}
+  {"→ Converging" if np.std(episode_rewards[-window_size:]) < np.std(episode_rewards[:window_size]) else "→ Exploring"}
+    """
+    
+    ax.text(0.1, 0.9, metrics_text, transform=ax.transAxes,
+           fontsize=10, verticalalignment='top', family='monospace',
+           bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+    
+    fig.suptitle(title, fontsize=14, fontweight='bold')
+    plt.tight_layout()
+    plt.show()
+
 def create_performance_dashboard(
     water_levels: np.ndarray,
     rewards: List[float],
