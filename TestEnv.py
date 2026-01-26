@@ -5,7 +5,7 @@ import pandas as pd
 class HydroElectric_Test(gym.Env):
 
 
-    def __init__(self, path_to_test_data=str):
+    def __init__(self, path_to_test_data:str):
         # Define a discrete action space, -1 0 or 1
         self.discrete_action_space = gym.spaces.Discrete(3)
         # Define a continuous action space, -1 to 1
@@ -30,9 +30,8 @@ class HydroElectric_Test(gym.Env):
         self.volume_to_MWh = (self.water_mass*self.gravity_constant*self.dam_height)*2.77778e-10  # m^3 to MWh
 
     def step(self, action):
-        action = np.squeeze(action) # Remove the extra dimension
-        #action = [-1, 0, 1][int(action)]
         reward = 0
+        action = np.squeeze(action) # Remove the extra dimension
         # Calculate the costs and volume change when pumping water (action >0)
         if (action >0) and (self.volume <= self.max_volume):
             if (self.volume + action*self.max_flow) > self.max_volume:
@@ -53,6 +52,8 @@ class HydroElectric_Test(gym.Env):
         # No action (action =0)
         elif action ==0:
             reward = 0
+        #volume safeguard
+        self.volume = np.clip(self.volume, 0, self.max_volume)
 
         self.counter += 1 # Increase the counter
         self.hour += 1 # Increase the hour
@@ -81,14 +82,14 @@ class HydroElectric_Test(gym.Env):
         self.state = np.array([dam_level, price, int(hour), int(day_of_week), int(day_of_year), int(month), int(year)])
 
         return self.state
-    
-    def reset(self, seed=None):
-        super().reset(seed=seed)
 
-        self.counter = 0
-        self.hour = 1
-        self.day = 1
-        self.volume = self.max_volume / 2
+    # def reset(self, seed=None):
+    #     super().reset(seed=seed)
 
-        return self.observation(), {}
+    #     self.counter = 0
+    #     self.hour = 1
+    #     self.day = 1
+    #     self.volume = self.max_volume / 2
+
+    #     return self.observation(), {}
     

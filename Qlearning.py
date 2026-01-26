@@ -3,6 +3,8 @@ import pandas as pd
 from reward_shaping import reward_shaping
 import matplotlib.pyplot as plt
 import optuna 
+import gymnasium as gym
+from gymnasium.spaces import Discrete
 
 class QAgent():
 
@@ -10,7 +12,7 @@ class QAgent():
 
         self.env = env
         self.discount_rate = discount_rate
-        self.discrete_action_space = self.env.discrete_action_space.n
+        self.discrete_action_space = self.env.action_space.n
         self.learning_curve = []
         self.state_visits = None
         
@@ -96,14 +98,14 @@ class QAgent():
             while not done:
 
                 if np.random.uniform(0, 1) < self.epsilon:
-                    action = self.env.discrete_action_space.sample()
+                    action = self.env.action_space.sample()
                 else:
                     action = np.argmax(self.Qtable[state])
 
-                env_action =  action - 1
-                next_state, base_reward, terminated, truncated, _ = self.env.step(env_action)
+                # env_action =  action - 1
+                next_state, base_reward, terminated, truncated, _ = self.env.step(action)
                 reward = reward_shaping(self.env, base_reward, self.action_history)
-                self.action_history.append(env_action)
+                self.action_history.append(action)
                 done = terminated or truncated
                 next_state = self.discretize_state(next_state)
 
@@ -129,7 +131,7 @@ class QAgent():
                 
             self.total_reward_history.append(total_rewards)
 
-            if episode % 20 == 0:
+            if episode % 5 == 0:
                 print(episode,total_rewards)
                 if episode != 0:
                     print("mean reward", round(np.mean(self.state_rewards),2),
@@ -153,7 +155,7 @@ class QAgent():
             # i += 1
             state_d = self.discretize_state(state)
             action = np.argmax(self.Qtable[state_d])
-            action -= 1
+            # action -= 1
             state, reward, terminated, truncated, _ = self.env.step(action)
             actions_play.append(action)
             done = terminated or truncated
@@ -190,6 +192,7 @@ class QAgent():
         self.study = study
         return study.best_params
 
+
 # class StepWrapper:
 #     def __init__(self, env, step_hours=3):
 #         self.env = env
@@ -221,3 +224,37 @@ class QAgent():
 
 
 
+class number_of_actions_env_wrapper(gym.ActionWrapper):
+    def __init__(self,env,num_actions):
+        super().__init__(env)
+        self.action_space = Discrete(num_actions)
+
+        if num_actions ==5:
+            self.mapping = { 0:-1, 
+                            1 : -0.5,
+                            2: 0,
+                            3: 0.5,
+                            4: 1}
+        elif  num_actions ==3:
+            self.mapping = { 0:-1, 
+                            1: 0,
+                            2: 1}
+        else:
+            raise ValueError(f"number_of_actions_env_wrapper only supports 3 or 5 actions, got {num_actions}")
+
+    def action(self, action):
+        return self.mapping[action]
+    
+    def reset(self, seed=None):
+        super().reset(seed=seed)
+
+        self.env.counter = 0
+        self.env.hour = 1
+        self.env.day = 1
+        self.env.volume = self.env.max_volume / 2
+
+        return self.env.observation(), {}
+    
+    def __getattr__(self, name):
+        # Als de wrapper iets niet heeft, vraag door aan de originele env
+        return getattr(self.env, name)
