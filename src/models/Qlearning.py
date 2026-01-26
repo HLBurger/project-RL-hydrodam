@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from reward_shaping import reward_shaping
+from src.env.reward_shaping import reward_shaping
 import matplotlib.pyplot as plt
 import optuna 
 import gymnasium as gym
@@ -70,7 +70,7 @@ class QAgent():
 
 
     def train(self, simulations, learning_rate, epsilon=0.1, epsilon_decay=1000,
-              adaptive_epsilon=False, adaptive_learning_rate = True):
+              adaptive_epsilon=False, adaptive_learning_rate = True, use_reward_shaping = True):
 
         self.create_Q_table()
         self.starting_learning_rate = learning_rate
@@ -103,8 +103,9 @@ class QAgent():
                     action = np.argmax(self.Qtable[state])
 
                 # env_action =  action - 1
-                next_state, base_reward, terminated, truncated, _ = self.env.step(action)
-                reward = reward_shaping(self.env, base_reward, self.action_history)
+                next_state, reward, terminated, truncated, _ = self.env.step(action)
+                if use_reward_shaping:
+                    reward = reward_shaping(self.env, reward, self.action_history)
                 self.action_history.append(action)
                 done = terminated or truncated
                 next_state = self.discretize_state(next_state)

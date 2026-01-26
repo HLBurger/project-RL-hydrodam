@@ -23,9 +23,6 @@ This README explains the proposed repository structure, the role of each compone
 │ ├── policies/ <br>
 │ │ └── policies.py # Baseline and heuristic policies <br>
 │ │ <br>
-│ ├── utils/ <br>
-│ │ └── analytics.py # Logging, metrics, plotting helpers <br>
-│ │ <br>
 │ └── main.py # Entry point for training / evaluation <br>
 │ <br>
 ├── notebooks/ <br>

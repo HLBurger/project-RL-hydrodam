@@ -1,7 +1,6 @@
 import numpy as np
-import matplotlib 
-import matplotlib.pyplot as plt
-from reward_shaping import reward_shaping
+import matplotlib
+from src.reward_shaping import reward_shaping
 matplotlib.use("TkAgg")
 import random
 def hourly_policy(observation):

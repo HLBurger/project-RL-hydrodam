@@ -1,6 +1,6 @@
-from TestEnv import HydroElectric_Test
-from policies import hourly_policy, weekday_policy, time_policy
-from reward_shaping import reward_shaping
+from src.TestEnv import HydroElectric_Test
+from src.policies.policies import hourly_policy, weekday_policy, time_policy
+from src.reward_shaping import reward_shaping
 import argparse
 import matplotlib.pyplot as plt
 
