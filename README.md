@@ -5,7 +5,6 @@ The codebase is organized to clearly separate core source code, experiment noteb
 This README explains the proposed repository structure, the role of each component, how to install, and how to run the code and experiments.
 
 ## Repository Structure
-. <br>
 ├── README.md <br>
 ├── requirements.txt <br>
 ├── data/ <br>
@@ -60,14 +59,14 @@ source venv/bin/activate   # Linux / macOS
 venv\Scripts\activate   	 # Windows
 pip install -r requirements.txt
 ```
-**2. running the code:**
+**2. running the code:** <br>
 You can directly run the code using the following code below, depending on the specific model you want to use.
 ```
 python src/main.py --model qlearning
 python src/main.py --model hour_policy
 ```
 
-**3. running experiments:**
+**3. running experiments:** <br>
 Alternatively, you can run the experiments of each model in the python notebooks, which is recommended.
 Just open one of the following notebooks in the `notebooks/` directory:
 - `Qlearning.ipynb`
