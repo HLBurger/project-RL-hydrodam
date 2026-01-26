@@ -20,14 +20,15 @@ This README explains the proposed repository structure, the role of each compone
 │ │ ├── Qlearning.py # Q-Learning implementation <br>
 │ │ └── DQN.py # Deep Q-Network implementation <br>
 │ │ <br>
-│ ├── policies/ <br>
-│ │ └── policies.py # Baseline and heuristic policies <br>
+│ ├── utils/ <br>
+│ │ ├── policies.py # Baseline and heuristic policies <br>
+│ │ └── visualizations.py # Visualizations for the model performance <br>
 │ │ <br>
 │ └── main.py # Entry point for training / evaluation <br>
 │ <br>
 ├── notebooks/ <br>
-│ ├── qlearning.ipynb # Q-Learning experiments <br>
-│ ├── dqn.ipynb # DQN experiments <br>
+│ ├── Qlearning.ipynb # Q-Learning experiments <br>
+│ ├── DQN.ipynb # DQN experiments <br>
 │ ├── model_tuning.ipynb # Hyperparameter tuning <br>
 │ ├── analytics.ipynb # Result analysis and visualization <br>
 │ └── policies.ipynb # Policy baseline experiments <br>
