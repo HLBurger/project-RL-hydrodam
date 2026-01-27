@@ -9,7 +9,7 @@ class PPOWrapper(gym.Env):
     def __init__(self, env, reward_shape = True):
         super().__init__()
         self.env = env
-        self.max_episode_length = len(self.env.price_values.flatten())
+        # self.max_episode_length = len(self.env.price_values.flatten())
         self.action_space = Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
         self.reward_shape = reward_shape
         self.observation_space = Box(low=0.0, high=1.0, shape=(5,), dtype=np.float32)
@@ -38,7 +38,8 @@ class PPOWrapper(gym.Env):
 
     def step(self, action):
         
-        real_action = float(action[0])
+        # real_action = float(action[0])
+        real_action = float(np.clip(action[0], -1, 1))
         self.action_history.append(real_action)
 
         next_obs, reward, terminated, truncated, info = self.env.step(real_action)
