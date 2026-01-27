@@ -1,7 +1,4 @@
-import numpy as np
 import matplotlib
-from src.reward_shaping import reward_shaping
-matplotlib.use("TkAgg")
 import random
 def hourly_policy(observation):
     # The observation is the tuple: [volume, price, hour_of_day, day_of_week, day_of_year, month_of_year, year]

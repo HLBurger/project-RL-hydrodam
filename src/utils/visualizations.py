@@ -23,7 +23,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Union, Dict
 import warnings
 
 # Set style for better-looking plots
@@ -95,28 +95,47 @@ def plot_water_levels(
     plt.show()
 
 def plot_cumulative_rewards(
-    rewards: List[float],
+    rewards: Union[List[float], Dict[str, List[float]]],
     title: str = "Cumulative Reward Over Time",
-    figsize: Tuple[int, int] = (14, 5)
+    figsize: Tuple[int, int] = (14, 5),
+    labels: Optional[List[str]] = None
 ) -> None:
     """
-    Plot cumulative rewards over time.
+    Plot cumulative rewards over time (single or multiple lines).
     
     Args:
-        rewards: List of rewards per timestep
+        rewards: Either a list of rewards, or a dict mapping labels to reward lists
         title: Plot title
         figsize: Figure size as (width, height)
+        labels: Optional list of labels for multiple reward series (ignored if rewards is a dict)
     """
-    cumulative = np.cumsum(rewards)
+    colors = ['#F77F00', '#06A77D', '#D62828', '#F18F01', '#C1121F', '#073B4C']
     
     fig, ax = plt.subplots(figsize=figsize)
-    ax.plot(cumulative, linewidth=2.5, color='#F77F00')
-    ax.fill_between(range(len(cumulative)), 0, cumulative, alpha=0.2, color='#F77F00')
+    
+    # Handle dict input (preferred for multiple lines)
+    if isinstance(rewards, dict):
+        for idx, (label, reward_list) in enumerate(rewards.items()):
+            cumulative = np.cumsum(reward_list)
+            color = colors[idx % len(colors)]
+            ax.plot(cumulative, linewidth=2.5, label=label, color=color)
+            ax.fill_between(range(len(cumulative)), 0, cumulative, alpha=0.15, color=color)
+    
+    # Handle list input (single line)
+    else:
+        cumulative = np.cumsum(rewards)
+        ax.plot(cumulative, linewidth=2.5, color=colors[0])
+        ax.fill_between(range(len(cumulative)), 0, cumulative, alpha=0.2, color=colors[0])
     
     ax.set_title(title, fontsize=14, fontweight='bold')
     ax.set_xlabel("Timestep (hours)", fontsize=11)
     ax.set_ylabel("Cumulative Reward", fontsize=11)
     ax.grid(True, alpha=0.3)
+    
+    # Add legend if multiple lines
+    if isinstance(rewards, dict) or (labels and len(labels) > 1):
+        ax.legend(fontsize=10, loc='best')
+    
     plt.tight_layout()
     plt.show()
 
@@ -309,8 +328,8 @@ def plot_state_heatmap(agent, dim_x, dim_y):
 
     plt.colorbar(im, label="Visits")
     plt.title(f"{dim_x} × {dim_y} visits")
-    plt.xlabel(f"{dim_y} bin")
-    plt.ylabel(f"{dim_x} bin")
+    plt.xlabel(f"{dim_x} bin")
+    plt.ylabel(f"{dim_y} bin")
 
     # 5. Labels veilig formatteren (±inf)
     def format_bin(b):
@@ -320,8 +339,8 @@ def plot_state_heatmap(agent, dim_x, dim_y):
             return "∞"
         return str(int(b))
 
-    xbins = bins_map[dim_y]
-    ybins = bins_map[dim_x]
+    xbins = bins_map[dim_x]
+    ybins = bins_map[dim_y]
 
     plt.xticks(
         ticks=np.arange(len(xbins)),
@@ -597,6 +616,6 @@ Actions:
             fontsize=10, verticalalignment='top', family='monospace',
             bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
     
-    fig.suptitle("Q-Learning Model Performance Dashboard", 
+    fig.suptitle("Model Performance Dashboard", 
                 fontsize=16, fontweight='bold', y=0.995)
     plt.show()
