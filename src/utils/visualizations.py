@@ -483,10 +483,11 @@ Training Status:
 def create_performance_dashboard(
     water_levels: np.ndarray,
     rewards: List[float],
-    action_history: List[int],
+    action_history: List[float],
     max_volume: float,
     agent = None,
-    figsize: Tuple[int, int] = (18, 14)
+    figsize: Tuple[int, int] = (18, 14),
+    action_type: str = 'continuous'
 ) -> None:
     """
     Create a comprehensive multi-panel dashboard of model performance.
@@ -494,12 +495,14 @@ def create_performance_dashboard(
     Args:
         water_levels: Array of water volumes
         rewards: List of rewards per timestep
-        action_history: List of actions taken
+        action_history: List of actions taken (can be discrete or continuous)
         max_volume: Maximum allowed water volume
         agent: QAgent instance (optional, for state heatmap)
         figsize: Figure size as (width, height)
+        action_type: 'continuous' or 'discrete' to specify action space type
     """
     water_levels = np.array(water_levels)
+    action_history = np.array(action_history)
     
     fig = plt.figure(figsize=figsize)
     gs = fig.add_gridspec(3, 3, hspace=0.35, wspace=0.3)
@@ -513,15 +516,28 @@ def create_performance_dashboard(
     ax1.set_ylabel("Volume (m³)", fontsize=10)
     ax1.grid(True, alpha=0.3)
     
-    # 2. Action distribution
+    # 2. Action visualization (discrete or continuous)
     ax2 = fig.add_subplot(gs[0, 2])
-    unique_actions = sorted(set(action_history))
-    action_counts = [action_history.count(a) for a in unique_actions]
-    colors = plt.cm.Set3(np.linspace(0, 1, len(unique_actions)))
-    ax2.bar(unique_actions, action_counts, color=colors, edgecolor='black')
-    ax2.set_title("Action Distribution", fontsize=12, fontweight='bold')
-    ax2.set_ylabel("Count", fontsize=10)
-    ax2.set_xlabel("Action", fontsize=10)
+    
+    if action_type == 'continuous':
+        # For continuous actions, show a histogram
+        ax2.hist(action_history, bins=30, color='#2E86AB', alpha=0.7, edgecolor='black')
+        ax2.axvline(np.mean(action_history), color='red', linestyle='--', linewidth=2, label='Mean')
+        ax2.axvline(np.median(action_history), color='green', linestyle='--', linewidth=2, label='Median')
+        ax2.set_title("Action Distribution", fontsize=12, fontweight='bold')
+        ax2.set_ylabel("Frequency", fontsize=10)
+        ax2.set_xlabel("Action Value", fontsize=10)
+        ax2.legend(fontsize=9)
+    else:
+        # For discrete actions, show bar chart
+        unique_actions = sorted(set(action_history.astype(int)))
+        action_counts = [np.sum(action_history == a) for a in unique_actions]
+        colors = plt.cm.Set3(np.linspace(0, 1, len(unique_actions)))
+        ax2.bar(unique_actions, action_counts, color=colors, edgecolor='black')
+        ax2.set_title("Action Distribution", fontsize=12, fontweight='bold')
+        ax2.set_ylabel("Count", fontsize=10)
+        ax2.set_xlabel("Action", fontsize=10)
+    
     ax2.grid(True, alpha=0.3, axis='y')
     
     # 3. Cumulative rewards
@@ -571,6 +587,15 @@ def create_performance_dashboard(
     ax6 = fig.add_subplot(gs[2, 2])
     ax6.axis('off')
     
+    if action_type == 'continuous':
+        action_stats = f"""  Mean: {np.mean(action_history):.4f}
+  Min: {np.min(action_history):.4f}
+  Max: {np.max(action_history):.4f}
+  Std: {np.std(action_history):.4f}"""
+    else:
+        action_stats = f"""  Total: {len(action_history)}
+  Unique: {len(set(action_history.astype(int)))}"""
+    
     stats_text = f"""
 PERFORMANCE SUMMARY
 
@@ -587,8 +612,7 @@ Rewards:
   Max: {np.max(rewards):.2f}
 
 Actions:
-  Total: {len(action_history)}
-  Unique: {len(set(action_history))}
+{action_stats}
     """
     
     ax6.text(0.05, 0.95, stats_text, transform=ax6.transAxes,
