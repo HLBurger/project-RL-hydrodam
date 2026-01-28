@@ -16,14 +16,11 @@ class QAgent():
         self.learning_curve = []
         self.state_visits = None
         
-        # Bins 
         self.volume_bins = np.array([-np.inf, 20_000, 40_000, 60_000, 80_000, np.inf])
-        self.price_bins = np.array([-np.inf,27,37, 50, 72, np.inf]) #= np.quantile(env.price_values, np.linspace(0, 1, 5 + 1))
+        self.price_bins = np.array([-np.inf,27,37, 50, 72, np.inf])
         self.hour_bins = np.arange(0, 25, 3)
         self.week_bins = np.array([-np.inf,5 ,np.inf])
         self.month_bins = np.array([-np.inf,3,6,9 ,np.inf])
-
-        # self.bins = [self.volume_bins, self.price_bins, self.hour_bins, self.week_bins, self.month_bins]
 
         self.action_history = []
         self.total_reward_history = []
@@ -102,7 +99,6 @@ class QAgent():
                 else:
                     action = np.argmax(self.Qtable[state])
 
-                # env_action =  action - 1
                 next_state, reward, terminated, truncated, _ = self.env.step(action)
                 if use_reward_shaping:
                     reward = reward_shaping(self.env, reward, self.action_history)
@@ -140,9 +136,6 @@ class QAgent():
                           "max reward", round(max(self.state_rewards),2), 
                           "max total reward", round(max(self.total_reward_history),2))
 
-            # if adapting_learning_rate:
-            #     self.learning_rate = self.learning_rate/np.sqrt(i+1)
-
     def play(self):
 
         water_levels = []
@@ -150,24 +143,17 @@ class QAgent():
         actions_play = []
         state, _ = self.env.reset()
         done = False
-        # i = 0
 
         while not done:
-            # i += 1
             state_d = self.discretize_state(state)
             action = np.argmax(self.Qtable[state_d])
-            # action -= 1
+
             state, reward, terminated, truncated, _ = self.env.step(action)
             actions_play.append(action)
             done = terminated or truncated
             water_levels.append(state[0])
             rewards.append(reward)
         
-            # if i >= 365:
-            #     done = True
-
-        
-        # Print totale reward
         print("Total reward in evaluation:", round(sum(rewards),2))
         print("avg reward", round(np.mean(rewards),2))
         print("max", max(rewards), "min",min(rewards))
@@ -204,7 +190,6 @@ class QAgent():
 
         self.discount_rate = float(data["discount_rate"])
 
-        # Recreate table dimensions
         self.create_Q_table()
 
         self.Qtable = data["Qtable"]
@@ -224,37 +209,6 @@ class QAgent():
     )
 
 
-# class StepWrapper:
-#     def __init__(self, env, step_hours=3):
-#         self.env = env
-#         self.step_hours = step_hours
-#         self.action_history = []
-#         self.reward_log = []
-
-#     def reset(self):
-#         return self.env.reset()
-
-#     def step(self, action):
-#         total_reward = 0
-#         done = False
-#         info = {}
-#         for _ in range(self.step_hours):
-#             if done:
-#                 break
-
-#             action -= 1  # Convert action from {0,1,2} to {-1,0,1}
-#             obs, reward, terminated, truncated, info = self.env.step(action)
-#             self.action_history.append(action)
-#             reward = reward_shaping(self.env, reward, self.action_history)
-#             total_reward += reward
-#             done = terminated or truncated
-#         return obs, total_reward, done, done, info
-#     def __getattr__(self, name):
-#         # alles wat StepWrapper zelf niet heeft, vraag door aan de originele env
-#         return getattr(self.env, name)
-
-
-
 class number_of_actions_env_wrapper(gym.ActionWrapper):
     def __init__(self,env,num_actions):
         super().__init__(env)
@@ -271,7 +225,7 @@ class number_of_actions_env_wrapper(gym.ActionWrapper):
                             1: 0,
                             2: 1}
         else:
-            raise ValueError(f"number_of_actions_env_wrapper only supports 3 or 5 actions, got {num_actions}")
+            raise ValueError(f"number_of_actions_env_wrapper only supports 3 or 5 actions")
 
     def action(self, action):
         return self.mapping[action]
@@ -287,5 +241,4 @@ class number_of_actions_env_wrapper(gym.ActionWrapper):
         return self.env.observation(), {}
     
     def __getattr__(self, name):
-        # Als de wrapper iets niet heeft, vraag door aan de originele env
         return getattr(self.env, name)

@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from typing import List, Tuple, Optional, Union, Dict
 import warnings
+from optuna.importance import get_param_importances
+import optuna
+
 
 # Set style for better-looking plots
 sns.set_style("whitegrid")
@@ -11,21 +14,8 @@ plt.rcParams['figure.dpi'] = 100
 plt.rcParams['font.size'] = 10
 
 
-def plot_actions_over_time(
-    action_history: List[int],
-    title: str = "Agent Actions Over Time",
-    num_steps: Optional[int] = None,
-    figsize: Tuple[int, int] = (14, 5)
-) -> None:
-    """
-    Visualize agent actions over time with markers.
-    
-    Args:
-        action_history: List of discrete action indices
-        title: Plot title
-        num_steps: Number of steps to plot (None = all)
-        figsize: Figure size as (width, height)
-    """
+def plot_actions_over_time( action_history, title= "Agent Actions Over Time", 
+                           num_steps = None, figsize = (14, 5) ): 
     actions = action_history[:num_steps] if num_steps else action_history
     
     fig, ax = plt.subplots(figsize=figsize)
@@ -38,23 +28,9 @@ def plot_actions_over_time(
     plt.show()
 
 
-def plot_water_levels(
-    water_levels: np.ndarray,
-    max_volume: float,
-    title: str = "Water Volume Over Time",
-    num_steps: Optional[int] = None,
-    figsize: Tuple[int, int] = (14, 5)
-) -> None:
-    """
-    Plot water volume over time with maximum threshold line.
+def plot_water_levels(water_levels, max_volume, title = "Water Volume Over Time", 
+                      num_steps = None, figsize= (14, 5)): 
     
-    Args:
-        water_levels: Array of water volumes
-        max_volume: Maximum allowed water volume
-        title: Plot title
-        num_steps: Number of steps to plot (None = all)
-        figsize: Figure size as (width, height)
-    """
     levels = water_levels[:num_steps] if num_steps else water_levels
     
     fig, ax = plt.subplots(figsize=figsize)
@@ -64,7 +40,6 @@ def plot_water_levels(
     
     # Fill between 0 and the water level
     ax.fill_between(range(len(levels)), 0, levels, alpha=0.2, color='#06A77D')
-    
     ax.set_title(title, fontsize=14, fontweight='bold')
     ax.set_xlabel("Timestep (hours)", fontsize=11)
     ax.set_ylabel("Water Volume (m³)", fontsize=11)
@@ -74,20 +49,7 @@ def plot_water_levels(
     plt.show()
 
 def plot_cumulative_rewards(
-    rewards: Union[List[float], Dict[str, List[float]]],
-    title: str = "Cumulative Reward Over Time",
-    figsize: Tuple[int, int] = (14, 5),
-    labels: Optional[List[str]] = None
-) -> None:
-    """
-    Plot cumulative rewards over time (single or multiple lines).
-    
-    Args:
-        rewards: Either a list of rewards, or a dict mapping labels to reward lists
-        title: Plot title
-        figsize: Figure size as (width, height)
-        labels: Optional list of labels for multiple reward series (ignored if rewards is a dict)
-    """
+    rewards, title= "Cumulative Reward Over Time", figsize= (14, 5), labels = None):
     colors = ['#F77F00', '#06A77D', '#D62828', '#F18F01', '#C1121F', '#073B4C']
     
     fig, ax = plt.subplots(figsize=figsize)
@@ -119,23 +81,9 @@ def plot_cumulative_rewards(
     plt.show()
 
 
-def plot_daily_statistics(
-    water_levels: np.ndarray,
-    max_volume: float,
-    hours_per_day: int = 24,
-    title: str = "Daily Water Level Statistics",
-    figsize: Tuple[int, int] = (14, 6)
-) -> None:
-    """
-    Plot daily maximum, minimum, and mean water levels.
+def plot_daily_statistics(water_levels, max_volume, hours_per_day = 24, title = "Daily Water Level Statistics",
+                          figsize = (14, 6)): 
     
-    Args:
-        water_levels: Array of water volumes
-        max_volume: Maximum allowed water volume
-        hours_per_day: Number of hours per day (default 24)
-        title: Plot title
-        figsize: Figure size as (width, height)
-    """
     water_levels = np.array(water_levels)
     
     # Handle incomplete last day
@@ -172,21 +120,8 @@ def plot_daily_statistics(
     plt.tight_layout()
     plt.show()
 
-def plot_reward_distribution(
-    rewards: List[float],
-    bins: int = 30,
-    title: str = "Reward Distribution",
-    figsize: Tuple[int, int] = (12, 5)
-) -> None:
-    """
-    Plot histogram and KDE of reward distribution.
+def plot_reward_distribution(rewards, bins = 30, title = "Reward Distribution", figsize = (12, 5)):
     
-    Args:
-        rewards: List of rewards per timestep
-        bins: Number of histogram bins
-        title: Plot title
-        figsize: Figure size as (width, height)
-    """
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
     
     # Histogram
@@ -222,19 +157,7 @@ def plot_reward_distribution(
     plt.show()
 
 
-def plot_action_distribution(
-    action_history: List[int],
-    title: str = "Action Distribution",
-    figsize: Tuple[int, int] = (10, 6)
-) -> None:
-    """
-    Plot bar chart of action frequencies.
-    
-    Args:
-        action_history: List of actions taken
-        title: Plot title
-        figsize: Figure size as (width, height)
-    """
+def plot_action_distribution(action_history, title= "Action Distribution",figsize = (10, 6)):
     unique_actions = sorted(set(action_history))
     action_counts = [action_history.count(a) for a in unique_actions]
     action_percentages = [count / len(action_history) * 100 for count in action_counts]
@@ -260,15 +183,9 @@ def plot_action_distribution(
     plt.show()
 
 def plot_state_heatmap(agent, dim_x, dim_y):
-    """
-    dim_x, dim_y: strings, één van:
-        "Volume", "Price", "Hour", "Week", "Month"
-    """
-
-    import numpy as np
-    import matplotlib.pyplot as plt
-
-    # 1. Mapping van naam → index in state_visits
+    
+   
+    #mapping name 
     dim_map = {
         "Volume": 0,
         "Price": 1,
@@ -277,7 +194,7 @@ def plot_state_heatmap(agent, dim_x, dim_y):
         "Month": 4
     }
 
-    # 2. Bins per dimensie
+    # mapping bins 
     bins_map = {
         "Volume": agent.volume_bins[:-1],
         "Price": agent.price_bins[:-1],
@@ -289,28 +206,19 @@ def plot_state_heatmap(agent, dim_x, dim_y):
     ix = dim_map[dim_x]
     iy = dim_map[dim_y]
 
-    # 3. Alle dimensies behalve x en y weg-summen
+
     all_dims = {0, 1, 2, 3, 4}
     axes_to_sum = tuple(all_dims - {ix, iy})
-
     heatmap = agent.state_visits.sum(axis=axes_to_sum)
-
-    # 4. Plotten met correcte kleuren
     plt.figure(figsize=(7, 5))
 
-    im = plt.imshow(
-        heatmap,
-        origin="lower",
-        aspect="auto",
-        cmap="YlOrRd"  
-    )
+    im = plt.imshow( heatmap,origin="lower", aspect="auto", cmap="YlOrRd" )
 
     plt.colorbar(im, label="Visits")
     plt.title(f"{dim_x} × {dim_y} visits")
     plt.xlabel(f"{dim_x} bin")
     plt.ylabel(f"{dim_y} bin")
 
-    # 5. Labels veilig formatteren (±inf)
     def format_bin(b):
         if np.isneginf(b):
             return "-∞"
@@ -321,16 +229,9 @@ def plot_state_heatmap(agent, dim_x, dim_y):
     xbins = bins_map[dim_x]
     ybins = bins_map[dim_y]
 
-    plt.xticks(
-        ticks=np.arange(len(xbins)),
-        labels=[format_bin(b) for b in xbins]
-    )
-    plt.yticks(
-        ticks=np.arange(len(ybins)),
-        labels=[format_bin(b) for b in ybins]
-    )
+    plt.xticks(ticks=np.arange(len(xbins)), labels=[format_bin(b) for b in xbins] )
+    plt.yticks( ticks=np.arange(len(ybins)), labels=[format_bin(b) for b in ybins])
 
-    # 6. Getallen in de heatmap (kleur afhankelijk van intensiteit)
     max_val = heatmap.max() if heatmap.max() > 0 else 1
 
     for i in range(heatmap.shape[0]):
@@ -348,21 +249,7 @@ def plot_state_heatmap(agent, dim_x, dim_y):
     plt.tight_layout()
     plt.show()
 
-def plot_learning_curve(
-    episode_rewards: List[float],
-    window_size: int = 10,
-    title: str = "Learning Curve - Training Progress",
-    figsize: Tuple[int, int] = (14, 6)
-) -> None:
-    """
-    Plot learning curve showing episode rewards with rolling average.
-    
-    Args:
-        episode_rewards: List of total rewards per episode
-        window_size: Size of rolling average window (default: 10)
-        title: Plot title
-        figsize: Figure size as (width, height)
-    """
+def plot_learning_curve(episode_rewards, window_size, title= "Learning Curve - Training Progress", figsize = (14, 6)):
     fig, ax = plt.subplots(figsize=figsize)
     
     episodes = np.arange(len(episode_rewards))
@@ -388,27 +275,13 @@ def plot_learning_curve(
     plt.tight_layout()
     plt.show()
 
-def plot_learning_curve_with_phases(
-    episode_rewards: List[float],
-    window_size: int = 10,
-    title: str = "Learning Progress - Training Phases",
-    figsize: Tuple[int, int] = (16, 6)
-) -> None:
-    """
-    Plot learning curve with multiple metrics tracking training progress.
-    
-    Args:
-        episode_rewards: List of total rewards per episode
-        window_size: Size of rolling average window (default: 10)
-        title: Plot title
-        figsize: Figure size as (width, height)
-    """
+def plot_learning_curve_with_phases( episode_rewards, window_size= 10, title="Learning Progress - Training Phases", figsize = (16, 6)):
     episode_rewards = np.array(episode_rewards)
     episodes = np.arange(len(episode_rewards))
     
     fig, axes = plt.subplots(2, 2, figsize=figsize)
     
-    # 1. Raw rewards with rolling average
+    # rewards with rolling average
     ax = axes[0, 0]
     ax.plot(episodes, episode_rewards, linewidth=1, alpha=0.3, 
            color='#2E86AB', label='Per-Episode')
@@ -421,7 +294,7 @@ def plot_learning_curve_with_phases(
     ax.legend(fontsize=9)
     ax.grid(True, alpha=0.3)
     
-    # 2. Cumulative learning progress
+    # cumulative learning progress
     ax = axes[0, 1]
     cumulative_rewards = np.cumsum(episode_rewards)
     ax.plot(episodes, cumulative_rewards, linewidth=2.5, color='#06A77D')
@@ -430,7 +303,7 @@ def plot_learning_curve_with_phases(
     ax.set_ylabel("Total Cumulative Reward", fontsize=10)
     ax.grid(True, alpha=0.3)
     
-    # 3. Learning rate (improvement per episode)
+    # Learning rate 
     ax = axes[1, 0]
     improvement = np.diff(episode_rewards, prepend=episode_rewards[0])
     ax.bar(episodes, improvement, color=['#06A77D' if x > 0 else '#D62828' 
@@ -442,7 +315,7 @@ def plot_learning_curve_with_phases(
     ax.set_ylabel("Reward Change", fontsize=10)
     ax.grid(True, alpha=0.3, axis='y')
     
-    # 4. Learning metrics summary
+    # Learning metrics summary
     ax = axes[1, 1]
     ax.axis('off')
     
@@ -468,8 +341,8 @@ Rewards:
   Improvement: {improvement_pct:+.1f}%
 
 Training Status:
-  {"✓ Learning" if final_avg > avg_reward else "✗ Struggling"}
-  {"→ Converging" if np.std(episode_rewards[-window_size:]) < np.std(episode_rewards[:window_size]) else "→ Exploring"}
+  {"Learning" if final_avg > avg_reward else "Struggling"}
+  {"Converging" if np.std(episode_rewards[-window_size:]) < np.std(episode_rewards[:window_size]) else "Exploring"}
     """
     
     ax.text(0.1, 0.9, metrics_text, transform=ax.transAxes,
@@ -480,31 +353,13 @@ Training Status:
     plt.tight_layout()
     plt.show()
 
-def create_performance_dashboard(
-    water_levels: np.ndarray,
-    rewards: List[float],
-    action_history: List[int],
-    max_volume: float,
-    agent = None,
-    figsize: Tuple[int, int] = (18, 14)
-) -> None:
-    """
-    Create a comprehensive multi-panel dashboard of model performance.
-    
-    Args:
-        water_levels: Array of water volumes
-        rewards: List of rewards per timestep
-        action_history: List of actions taken
-        max_volume: Maximum allowed water volume
-        agent: QAgent instance (optional, for state heatmap)
-        figsize: Figure size as (width, height)
-    """
+def create_performance_dashboard(water_levels, rewards, action_history, max_volume, agent = None, figsize= (18, 14)):
     water_levels = np.array(water_levels)
     
     fig = plt.figure(figsize=figsize)
     gs = fig.add_gridspec(3, 3, hspace=0.35, wspace=0.3)
     
-    # 1. Water levels over time
+    # Water levels over time
     ax1 = fig.add_subplot(gs[0, :2])
     ax1.plot(water_levels, linewidth=2, color='#06A77D')
     ax1.axhline(max_volume, color='#D62828', linestyle='--', linewidth=2, alpha=0.7)
@@ -513,7 +368,7 @@ def create_performance_dashboard(
     ax1.set_ylabel("Volume (m³)", fontsize=10)
     ax1.grid(True, alpha=0.3)
     
-    # 2. Action distribution
+    # Action distribution
     ax2 = fig.add_subplot(gs[0, 2])
     unique_actions = sorted(set(action_history))
     action_counts = [action_history.count(a) for a in unique_actions]
@@ -524,7 +379,7 @@ def create_performance_dashboard(
     ax2.set_xlabel("Action", fontsize=10)
     ax2.grid(True, alpha=0.3, axis='y')
     
-    # 3. Cumulative rewards
+    # Cumulative rewards
     ax3 = fig.add_subplot(gs[1, :2])
     cumulative = np.cumsum(rewards)
     ax3.plot(cumulative, linewidth=2.5, color='#F77F00')
@@ -533,7 +388,7 @@ def create_performance_dashboard(
     ax3.set_ylabel("Cumulative Reward", fontsize=10)
     ax3.grid(True, alpha=0.3)
     
-    # 4. Reward distribution
+    # Reward distribution
     ax4 = fig.add_subplot(gs[1, 2])
     ax4.hist(rewards, bins=20, color='#2E86AB', alpha=0.7, edgecolor='black')
     ax4.axvline(np.mean(rewards), color='red', linestyle='--', linewidth=2, label='Mean')
@@ -543,7 +398,7 @@ def create_performance_dashboard(
     ax4.legend(fontsize=9)
     ax4.grid(True, alpha=0.3, axis='y')
     
-    # 5. Daily statistics
+    # Daily statistics
     hours_per_day = 24
     remainder = len(water_levels) % hours_per_day
     if remainder != 0:
@@ -599,27 +454,7 @@ Actions:
                 fontsize=16, fontweight='bold', y=0.995)
     plt.show()
 
-def create_optuna_study_dashboard(
-    study,
-    title: str = "Optuna Hyperparameter Optimization Dashboard",
-    figsize: Tuple[int, int] = (16, 10)
-) -> None:
-    """
-    Create simplified dashboard for Optuna study analysis.
-    
-    4 Panels:
-    1. Optimization history - best value over trials
-    2. Top parameters - parameter importance
-    3. Contour plot - relationship between top 2 parameters
-    4. Summary statistics - key study information
-    
-    Args:
-        study: Optuna study object
-        title: Dashboard title
-        figsize: Figure size as (width, height)
-    """
-    from optuna.importance import get_param_importances
-    import optuna
+def create_optuna_study_dashboard( study, title= "Optuna Hyperparameter Optimization Dashboard", figsize = (16, 10) ):
     
     trials_df = study.trials_dataframe()
     trial_values = trials_df['value'].dropna()
@@ -627,7 +462,7 @@ def create_optuna_study_dashboard(
     fig = plt.figure(figsize=figsize)
     gs = fig.add_gridspec(2, 2, hspace=0.3, wspace=0.3)
     
-    # 1. Optimization History (top left)
+    # Optimization History
     ax1 = fig.add_subplot(gs[0, 0])
     
     best_values = []
@@ -659,7 +494,7 @@ def create_optuna_study_dashboard(
     ax1.legend(fontsize=9)
     ax1.grid(True, alpha=0.3)
     
-    # 2. Top Parameters (top right)
+    # Top Parameters 
     ax2 = fig.add_subplot(gs[0, 1])
     
     try:
@@ -686,7 +521,7 @@ def create_optuna_study_dashboard(
         ax2.set_title("Top 5 Parameters", fontsize=12, fontweight='bold')
         ax2.axis('off')
     
-    # 3. Contour Plot (bottom left) - top 2 parameters
+    # Contour Plot
     ax3 = fig.add_subplot(gs[1, 0])
     
     try:
@@ -742,7 +577,7 @@ def create_optuna_study_dashboard(
                 fontsize=11, transform=ax3.transAxes)
         ax3.axis('off')
     
-    # 4. Summary Statistics (bottom right)
+    # Summary Statistics 
     ax4 = fig.add_subplot(gs[1, 1])
     ax4.axis('off')
     
@@ -763,9 +598,9 @@ def create_optuna_study_dashboard(
 
     Direction: {direction}
     Total Trials: {len(study.trials)}
-    ✓ Complete: {complete_trials}
-    ⊘ Pruned: {pruned_trials}
-    ✗ Failed: {failed_trials}
+    Complete: {complete_trials}
+    Pruned: {pruned_trials}
+    Failed: {failed_trials}
 
     Best Trial: #{study.best_trial.number}
     Best Value: {study.best_value:.6f}

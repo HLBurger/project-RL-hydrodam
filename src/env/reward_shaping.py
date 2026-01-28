@@ -14,36 +14,36 @@ def penalty_underflow(env):
         penalty = 0
     return penalty
 
-def penalty_bursts(action_history):
-    penalty = 0
+# def penalty_bursts(action_history):
+#     penalty = 0
 
-    if len(action_history) < 2:
-        return penalty
+#     if len(action_history) < 2:
+#         return penalty
 
-    # Apply penalty for extreme action changes
-    current_action = action_history[-1]
-    previous_action = action_history[-2]
-    if abs(current_action - previous_action) >= 2:
-        penalty = -15
+#     # Apply penalty for extreme action changes
+#     current_action = action_history[-1]
+#     previous_action = action_history[-2]
+#     if abs(current_action - previous_action) >= 2:
+#         penalty = -15
     
-    return penalty
+#     return penalty
 
-def penalty_idle(action_history):
-    penalty = 0
+# def penalty_idle(action_history):
+#     penalty = 0
 
-    if len(action_history) < 24:
-        return penalty
+#     if len(action_history) < 24:
+#         return penalty
     
-    if action_history[-1] != 0:
-        return penalty
+#     if action_history[-1] != 0:
+#         return penalty
     
-    # Apply penalty for each hour of idling in the last 24 hours
-    idle_hours = action_history[-24:].count(0)
-    # penalty = -2 * idle_hours
-    if idle_hours >= 22:
-        penalty = -2 * idle_hours
+#     # Apply penalty for each hour of idling in the last 24 hours
+#     idle_hours = action_history[-24:].count(0)
+#     # penalty = -2 * idle_hours
+#     if idle_hours >= 22:
+#         penalty = -2 * idle_hours
 
-    return penalty
+#     return penalty
 
 def reward_potential(env):
     dam_level = env.observation()[0]
@@ -54,12 +54,11 @@ def reward_shaping(env, base_reward, action_history):
     # Calculate volume penalty
     p_overflow = penalty_overflow(env)
     p_underflow = penalty_underflow(env)
-    p_bursts = penalty_bursts(action_history)
-    p_idle = penalty_idle(action_history)
+    # p_bursts = penalty_bursts(action_history)
+    # p_idle = penalty_idle(action_history)
     r_potential = reward_potential(env)
 
-    # shaped_reward = base_reward + p_overflow + p_underflow + p_bursts + p_idle + r_potential
-    shaped_reward = base_reward + p_overflow + p_underflow + r_potential #+  p_idle + p_bursts
+    shaped_reward = base_reward + p_overflow + p_underflow + r_potential
     return shaped_reward
 
 
