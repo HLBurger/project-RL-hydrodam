@@ -1,24 +1,3 @@
-"""
-Q-Learning Model Performance Visualizations
-
-This module provides a collection of visualization functions for analyzing
-Q-Learning agent performance, including convergence analysis, reward tracking,
-state visitation patterns, and policy evaluation.
-
-Functions:
-    - plot_actions_over_time: Visualize agent actions over time
-    - plot_water_levels: Plot water volume with max threshold
-    - plot_water_levels_multipart: Multi-panel view of extended time periods
-    - plot_cumulative_rewards: Cumulative reward progression
-    - plot_daily_statistics: Daily min/max/mean water levels
-    - plot_state_heatmap: 2D state visitation heatmap
-    - plot_multiple_heatmaps: Create multiple heatmaps from state pairs
-    - plot_action_distribution: Bar chart of action frequencies
-    - plot_water_stability: Water level variance analysis
-    - plot_reward_distribution: Distribution of rewards
-    - create_performance_dashboard: Comprehensive multi-panel dashboard
-"""
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -323,7 +302,7 @@ def plot_state_heatmap(agent, dim_x, dim_y):
         heatmap,
         origin="lower",
         aspect="auto",
-        cmap="YlOrRd"  # 🔥 goede heatmap-kleuren
+        cmap="YlOrRd"  
     )
 
     plt.colorbar(im, label="Visits")
@@ -618,4 +597,192 @@ Actions:
     
     fig.suptitle("Model Performance Dashboard", 
                 fontsize=16, fontweight='bold', y=0.995)
+    plt.show()
+
+def create_optuna_study_dashboard(
+    study,
+    title: str = "Optuna Hyperparameter Optimization Dashboard",
+    figsize: Tuple[int, int] = (16, 10)
+) -> None:
+    """
+    Create simplified dashboard for Optuna study analysis.
+    
+    4 Panels:
+    1. Optimization history - best value over trials
+    2. Top parameters - parameter importance
+    3. Contour plot - relationship between top 2 parameters
+    4. Summary statistics - key study information
+    
+    Args:
+        study: Optuna study object
+        title: Dashboard title
+        figsize: Figure size as (width, height)
+    """
+    from optuna.importance import get_param_importances
+    import optuna
+    
+    trials_df = study.trials_dataframe()
+    trial_values = trials_df['value'].dropna()
+    
+    fig = plt.figure(figsize=figsize)
+    gs = fig.add_gridspec(2, 2, hspace=0.3, wspace=0.3)
+    
+    # 1. Optimization History (top left)
+    ax1 = fig.add_subplot(gs[0, 0])
+    
+    best_values = []
+    best_value = float('inf') if study.direction.name == 'MINIMIZE' else float('-inf')
+    
+    for trial in study.trials:
+        if trial.value is None:
+            continue
+        
+        if study.direction.name == 'MINIMIZE':
+            if trial.value < best_value:
+                best_value = trial.value
+        else:
+            if trial.value > best_value:
+                best_value = trial.value
+        
+        best_values.append(best_value)
+    
+    trial_numbers = list(range(1, len(best_values) + 1))
+    ax1.plot(trial_numbers, best_values, linewidth=2.5, color='#2E86AB', marker='o', 
+            markersize=6, label='Best Value')
+    ax1.fill_between(trial_numbers, best_values, alpha=0.2, color='#2E86AB')
+    ax1.scatter([len(best_values)], [best_values[-1]], s=200, color='#D62828', marker='*', 
+               zorder=5, label='Best Trial')
+    
+    ax1.set_title("Optimization History", fontsize=12, fontweight='bold')
+    ax1.set_xlabel("Trial Number", fontsize=10)
+    ax1.set_ylabel("Best Value", fontsize=10)
+    ax1.legend(fontsize=9)
+    ax1.grid(True, alpha=0.3)
+    
+    # 2. Top Parameters (top right)
+    ax2 = fig.add_subplot(gs[0, 1])
+    
+    try:
+        importances = get_param_importances(study)
+        sorted_imp = sorted(importances.items(), key=lambda x: x[1], reverse=True)[:5]
+        param_names = [x[0] for x in sorted_imp]
+        imp_values = [x[1] for x in sorted_imp]
+        
+        colors = plt.cm.RdYlGn(np.linspace(0.3, 0.9, len(param_names)))
+        bars = ax2.barh(param_names, imp_values, color=colors, edgecolor='black', linewidth=1.5)
+        
+        # Add value labels
+        for bar, val in zip(bars, imp_values):
+            width = bar.get_width()
+            ax2.text(width, bar.get_y() + bar.get_height()/2, f' {val:.4f}', 
+                    ha='left', va='center', fontsize=9, fontweight='bold')
+        
+        ax2.set_title("Top 5 Parameters", fontsize=12, fontweight='bold')
+        ax2.set_xlabel("Importance Score", fontsize=10)
+        ax2.grid(True, alpha=0.3, axis='x')
+    except:
+        ax2.text(0.5, 0.5, 'Parameter Importance\nN/A', ha='center', va='center', 
+                fontsize=11, transform=ax2.transAxes)
+        ax2.set_title("Top 5 Parameters", fontsize=12, fontweight='bold')
+        ax2.axis('off')
+    
+    # 3. Contour Plot (bottom left) - top 2 parameters
+    ax3 = fig.add_subplot(gs[1, 0])
+    
+    try:
+        param_cols = [col for col in trials_df.columns if col.startswith('params_')]
+        
+        if len(param_cols) >= 2:
+            param1_col = param_cols[0]
+            param2_col = param_cols[1]
+            param1_name = param1_col.replace('params_', '')
+            param2_name = param2_col.replace('params_', '')
+            
+            # Get data
+            param1_data = trials_df[param1_col].dropna()
+            param2_data = trials_df[param2_col].dropna()
+            value_data = trials_df.loc[param1_data.index, 'value']
+            
+            # Only keep rows where both params exist
+            valid_idx = param1_data.index.intersection(param2_data.index).intersection(value_data.index)
+            param1_vals = trials_df.loc[valid_idx, param1_col].values
+            param2_vals = trials_df.loc[valid_idx, param2_col].values
+            values = trials_df.loc[valid_idx, 'value'].values
+            
+            if len(param1_vals) > 0:
+                # Create scatter with color based on value
+                scatter = ax3.scatter(param1_vals, param2_vals, c=values, s=100, 
+                                     cmap='RdYlGn', alpha=0.7, edgecolors='black', linewidth=0.5)
+                
+                # Mark best trial
+                best_idx = np.argmax(values) if study.direction.name == 'MAXIMIZE' else np.argmin(values)
+                ax3.scatter([param1_vals[best_idx]], [param2_vals[best_idx]], 
+                           s=300, marker='*', color='#D62828', edgecolors='black', 
+                           linewidth=2, zorder=5, label='Best Trial')
+                
+                cbar = plt.colorbar(scatter, ax=ax3)
+                cbar.set_label('Trial Value', fontsize=9)
+                
+                ax3.set_xlabel(param1_name, fontsize=10)
+                ax3.set_ylabel(param2_name, fontsize=10)
+                ax3.set_title(f"Parameter Relationship: {param1_name} vs {param2_name}", 
+                             fontsize=11, fontweight='bold')
+                ax3.legend(fontsize=9)
+                ax3.grid(True, alpha=0.3)
+            else:
+                ax3.text(0.5, 0.5, 'Insufficient data', ha='center', va='center', 
+                        fontsize=11, transform=ax3.transAxes)
+                ax3.axis('off')
+        else:
+            ax3.text(0.5, 0.5, 'Need at least 2 parameters', ha='center', va='center', 
+                    fontsize=11, transform=ax3.transAxes)
+            ax3.axis('off')
+    except Exception as e:
+        ax3.text(0.5, 0.5, 'Contour Plot\nError', ha='center', va='center', 
+                fontsize=11, transform=ax3.transAxes)
+        ax3.axis('off')
+    
+    # 4. Summary Statistics (bottom right)
+    ax4 = fig.add_subplot(gs[1, 1])
+    ax4.axis('off')
+    
+    # Calculate statistics
+    direction = "Maximization" if study.direction.name == 'MAXIMIZE' else "Minimization"
+    best_params = study.best_params
+    
+    complete_trials = len([t for t in study.trials if t.state.name == 'COMPLETE'])
+    pruned_trials = len([t for t in study.trials if t.state.name == 'PRUNED'])
+    failed_trials = len([t for t in study.trials if t.state.name == 'FAIL'])
+    
+    params_text = "\n".join([f"  {k}: {v}" for k, v in list(best_params.items())[:5]])
+    if len(best_params) > 5:
+        params_text += f"\n  ... and {len(best_params) - 5} more"
+    
+    stats_text = f"""
+    OPTUNA STUDY SUMMARY
+
+    Direction: {direction}
+    Total Trials: {len(study.trials)}
+    ✓ Complete: {complete_trials}
+    ⊘ Pruned: {pruned_trials}
+    ✗ Failed: {failed_trials}
+
+    Best Trial: #{study.best_trial.number}
+    Best Value: {study.best_value:.6f}
+
+    Trial Statistics:
+    Mean: {trial_values.mean():.6f}
+    Std: {trial_values.std():.6f}
+    Min: {trial_values.min():.6f}
+    Max: {trial_values.max():.6f}
+
+    Best Parameters:
+    {params_text}
+        """
+    
+    ax4.text(0.05, 0.95, stats_text, transform=ax4.transAxes,
+            fontsize=10, verticalalignment='top', family='monospace',
+            bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.6, pad=1))
+    
+    fig.suptitle(title, fontsize=16, fontweight='bold', y=0.98)
     plt.show()
