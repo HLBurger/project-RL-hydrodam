@@ -192,6 +192,36 @@ class QAgent():
         print("Best hyperparameters: ", study.best_params)
         self.study = study
         return study.best_params
+    
+    def load(self, path = "q_agent.npz"):
+        data = np.load(path)
+
+        self.volume_bins = data["volume_bins"]
+        self.price_bins = data["price_bins"]
+        self.hour_bins = data["hour_bins"]
+        self.week_bins = data["week_bins"]
+        self.month_bins = data["month_bins"]
+
+        self.discount_rate = float(data["discount_rate"])
+
+        # Recreate table dimensions
+        self.create_Q_table()
+
+        self.Qtable = data["Qtable"]
+        self.state_visits = data["state_visits"]
+    
+    def save(self, path = "q_agent.npz"):
+        np.savez_compressed(
+        path,
+        Qtable=self.Qtable,
+        volume_bins=self.volume_bins,
+        price_bins=self.price_bins,
+        hour_bins=self.hour_bins,
+        week_bins=self.week_bins,
+        month_bins=self.month_bins,
+        discount_rate=self.discount_rate,
+        state_visits=self.state_visits,
+    )
 
 
 # class StepWrapper:
