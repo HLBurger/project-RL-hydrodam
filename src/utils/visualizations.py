@@ -54,7 +54,7 @@ def plot_cumulative_rewards(
     
     fig, ax = plt.subplots(figsize=figsize)
     
-    # Handle dict input (preferred for multiple lines)
+    # Handle dict input
     if isinstance(rewards, dict):
         for idx, (label, reward_list) in enumerate(rewards.items()):
             cumulative = np.cumsum(reward_list)
@@ -62,7 +62,7 @@ def plot_cumulative_rewards(
             ax.plot(cumulative, linewidth=2.5, label=label, color=color)
             ax.fill_between(range(len(cumulative)), 0, cumulative, alpha=0.15, color=color)
     
-    # Handle list input (single line)
+    # Handle list input ->single line
     else:
         cumulative = np.cumsum(rewards)
         ax.plot(cumulative, linewidth=2.5, color=colors[0])
@@ -86,7 +86,7 @@ def plot_daily_statistics(water_levels, max_volume, hours_per_day = 24, title = 
     
     water_levels = np.array(water_levels)
     
-    # Handle incomplete last day
+    # incomplete last day
     remainder = len(water_levels) % hours_per_day
     if remainder != 0:
         water_levels = water_levels[:-remainder]
@@ -136,7 +136,7 @@ def plot_reward_distribution(rewards, bins = 30, title = "Reward Distribution", 
     ax1.legend(fontsize=9)
     ax1.grid(True, alpha=0.3, axis='y')
     
-    # Box plot
+    # Boxplot
     ax2.boxplot(rewards, vert=True, patch_artist=True,
                 boxprops=dict(facecolor='#2E86AB', alpha=0.7),
                 medianprops=dict(color='red', linewidth=2),
@@ -146,7 +146,7 @@ def plot_reward_distribution(rewards, bins = 30, title = "Reward Distribution", 
     ax2.set_ylabel("Reward Value", fontsize=10)
     ax2.grid(True, alpha=0.3, axis='y')
     
-    # Add text with statistics
+    # Add statistics
     stats_text = f"Mean: {np.mean(rewards):.2f}\nStd: {np.std(rewards):.2f}\n"
     stats_text += f"Min: {np.min(rewards):.2f}\nMax: {np.max(rewards):.2f}"
     ax2.text(1.25, np.median(rewards), stats_text, fontsize=9, 
@@ -254,17 +254,17 @@ def plot_learning_curve(episode_rewards, window_size, title= "Learning Curve - T
     
     episodes = np.arange(len(episode_rewards))
     
-    # Plot raw episode rewards with transparency
+    # episode rewards
     ax.plot(episodes, episode_rewards, linewidth=1, alpha=0.3, 
            color='#2E86AB', label='Per-Episode Reward')
     ax.scatter(episodes, episode_rewards, s=10, alpha=0.2, color='#2E86AB')
     
-    # Plot rolling average
+    # rolling average
     rolling_avg = pd.Series(episode_rewards).rolling(window=window_size, center=True).mean()
     ax.plot(episodes, rolling_avg, linewidth=2.5, color='#F77F00', 
            label=f'Rolling Average (window={window_size})')
     
-    # Fill between rolling avg and zero for visualization
+    # Fill between rolling avg and zero
     ax.fill_between(episodes, rolling_avg, alpha=0.2, color='#F77F00')
     
     ax.set_title(title, fontsize=14, fontweight='bold')
@@ -353,27 +353,7 @@ Training Status:
     plt.tight_layout()
     plt.show()
 
-def create_performance_dashboard(
-    water_levels: np.ndarray,
-    rewards: List[float],
-    action_history: List[float],
-    max_volume: float,
-    agent = None,
-    figsize: Tuple[int, int] = (18, 14),
-    action_type: str = 'continuous'
-) -> None:
-    """
-    Create a comprehensive multi-panel dashboard of model performance.
-    
-    Args:
-        water_levels: Array of water volumes
-        rewards: List of rewards per timestep
-        action_history: List of actions taken (can be discrete or continuous)
-        max_volume: Maximum allowed water volume
-        agent: QAgent instance (optional, for state heatmap)
-        figsize: Figure size as (width, height)
-        action_type: 'continuous' or 'discrete' to specify action space type
-    """
+def create_performance_dashboard(water_levels, rewards, action_history,max_volume, agent = None, figsize= (18, 14), action_type ='continuous'):
     water_levels = np.array(water_levels)
     action_history = np.array(action_history)
     
@@ -389,11 +369,11 @@ def create_performance_dashboard(
     ax1.set_ylabel("Volume (m³)", fontsize=10)
     ax1.grid(True, alpha=0.3)
     
-    # 2. Action visualization (discrete or continuous)
+    # Action visualization 
     ax2 = fig.add_subplot(gs[0, 2])
     
     if action_type == 'continuous':
-        # For continuous actions, show a histogram
+        #  histogram
         ax2.hist(action_history, bins=30, color='#2E86AB', alpha=0.7, edgecolor='black')
         ax2.axvline(np.mean(action_history), color='red', linestyle='--', linewidth=2, label='Mean')
         ax2.axvline(np.median(action_history), color='green', linestyle='--', linewidth=2, label='Median')
@@ -402,7 +382,7 @@ def create_performance_dashboard(
         ax2.set_xlabel("Action Value", fontsize=10)
         ax2.legend(fontsize=9)
     else:
-        # For discrete actions, show bar chart
+        # bar chart
         unique_actions = sorted(set(action_history.astype(int)))
         action_counts = [np.sum(action_history == a) for a in unique_actions]
         colors = plt.cm.Set3(np.linspace(0, 1, len(unique_actions)))
@@ -456,7 +436,7 @@ def create_performance_dashboard(
     ax5.legend(fontsize=9)
     ax5.grid(True, alpha=0.3)
     
-    # 6. Summary statistics text
+    # Summary statistics 
     ax6 = fig.add_subplot(gs[2, 2])
     ax6.axis('off')
     
