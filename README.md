@@ -14,7 +14,7 @@ This README explains the proposed repository structure, the role of each compone
 │ <br>
 ├── src/ <br>
 │ ├── env/ <br>
-│ │ ├── Test_Env.py # Base environment (formerly TestEnv.py) <br>
+│ │ ├── TestEnv.py # Base environment <br>
 │ │ └── reward_shaping.py # Reward shaping variants <br>
 │ │ <br>
 │ ├── models/ <br>
