@@ -12,7 +12,7 @@ import numpy as np
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--excel_file', type=str, default='data/validate.xlsx') # Path to the excel file with the test data
-parser.add_argument('--model', type=str, default='policy', choices=['dqn', 'ppo', 'qlearning', 'policy'],
+parser.add_argument('--model', type=str, default='dqn', choices=['dqn', 'ppo', 'qlearning', 'policy'],
                     help='Model to use: dqn, ppo, qlearning, or policy (default: dqn)')
 parser.add_argument('--model_path', type=str, default='pretrained_models/dqn_model_5bins_reward_shaping.zip',
                     help='Path to the pretrained model file (default: pretrained_models/dqn_model_5bins_reward_shaping.zip)')
